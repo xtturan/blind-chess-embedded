@@ -1,0 +1,21 @@
+# OS & Editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+
+# PlatformIO / Arduino builds
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Firmware binary outputs
+*.hex
+*.bin
+*.elf
+
+# Local secrets / Wi-Fi credentials
+secrets.h
+config.local.h

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlindChess</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>BlindChess</h1>
+        <p>Offline blind/deaf chess system</p>
+      </div>
+      <div class="header-actions">
+        <button id="toggleAdmin">Admin Panel</button>
+        <button id="toggleBenchmark">Benchmark</button>
+        <button id="forceReconnect">Force Reconnect</button>
+        <button id="testMotor">Test Output</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="status">
+        <div><strong>Status:</strong> <span id="statusText">Idle</span></div>
+        <div><strong>WebSocket:</strong> <span id="wsStatus">Disconnected</span></div>
+        <div><strong>Turn:</strong> <span id="turnText">White</span></div>
+        <div><strong>Selection:</strong> <span id="selectionText">0</span></div>
+        <div><strong>Tap Count:</strong> <span id="tapCountText">0</span></div>
+      </div>
+      <div class="board" id="board"></div>
+      <section class="moves" id="manualMovePanel">
+        <div class="moves-header">
+          <h2>Manual Move</h2>
+        </div>
+        <div class="moves-import">
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="manualMoveInput" placeholder="e2e4" style="flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #1e293b; background: #0f172a; color: #e2e8f0; font-size: 14px;" />
+            <button id="submitManualMove" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #334155; background: #1f2937; color: #e2e8f0; font-size: 12px;">Submit</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="moves" id="movesPanel">
+        <div class="moves-header">
+          <h2>Moves</h2>
+          <div class="moves-actions">
+            <button id="copyMoves">Copy moves</button>
+          </div>
+        </div>
+        <div id="movesList" class="moves-list"></div>
+        <div class="moves-import">
+          <textarea id="movesInput" placeholder="Paste moves (e2e4 e7e5 ...)" ></textarea>
+          <div class="moves-actions">
+            <button id="applyMoves">Start from position</button>
+            <button id="clearMoves">Clear moves</button>
+          </div>
+        </div>
+      </section>
+      <div class="help">
+        Controls: tap=increment, longpress=confirm, doubletap=back. Longpress in idle to start.
+        Output test cycles speaker frequencies for tactile feel.
+      </div>
+
+      <section id="benchmarkPanel" class="admin hidden">
+        <h2>Engine Benchmark</h2>
+        <div class="admin-grid">
+          <label>Benchmark Time (ms)
+            <input type="number" id="benchmarkTime" value="5000" min="1000" max="60000" />
+          </label>
+          <label>Benchmark Threads
+            <input type="number" id="benchmarkThreads" value="4" min="1" max="8" />
+          </label>
+        </div>
+        <div class="admin-actions">
+          <button id="startBenchmark">Start Benchmark</button>
+        </div>
+        <div id="benchmarkResults" class="moves hidden" style="margin-top: 12px; border-color: #a855f7;">
+          <div style="font-size: 14px; margin-bottom: 8px; color: #a855f7;"><strong>Benchmark Results</strong></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+            <div>Depth: <span id="resDepth">-</span></div>
+            <div>Nodes: <span id="resNodes">-</span></div>
+            <div>NPS: <span id="resNps">-</span></div>
+            <div>Time: <span id="resTime">-</span> ms</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="adminPanel" class="admin hidden">
+        <h2>Admin Panel</h2>
+        <div class="admin-grid">
+          <label><input type="checkbox" id="settingUseMotor" /> Use motor vibration</label>
+          <label><input type="checkbox" id="settingUsePhone" /> Use phone vibration</label>
+          <label><input type="checkbox" id="settingKeepAwake" /> Keep screen awake</label>
+          <label>Default frequency (Hz)
+            <input type="number" id="settingFreq" min="1" max="500" />
+          </label>
+          <label>PWM scale (0-1)
+            <input type="number" id="settingPwmScale" step="0.05" min="0" max="1" />
+          </label>
+          <label>Motor strength (on scale 0-1)
+            <input type="number" id="settingMotorOnScale" step="0.05" min="0.1" max="1" />
+          </label>
+          <label>Motor min off ms
+            <input type="number" id="settingMotorMinOff" min="0" max="2000" />
+          </label>
+          <label>Motor min on ms
+            <input type="number" id="settingMotorMinOn" min="10" max="2000" />
+          </label>
+          <label>Click ms
+            <input type="number" id="settingClickMs" min="10" max="1000" />
+          </label>
+          <label>Confirm ms
+            <input type="number" id="settingConfirmMs" min="10" max="2000" />
+          </label>
+          <label>Thinking ms
+            <input type="number" id="settingThinkingMs" min="10" max="2000" />
+          </label>
+          <label>Illegal buzz ms
+            <input type="number" id="settingIllegalMs" min="100" max="5000" />
+          </label>
+          <label>Illegal buzz PWM
+            <input type="number" id="settingIllegalPwm" min="0" max="255" />
+          </label>
+          <label>Idle cancel ms
+            <input type="number" id="settingIdleCancel" min="500" max="10000" />
+          </label>
+          <label>Idle reset ms
+            <input type="number" id="settingIdleReset" min="500" max="20000" />
+          </label>
+          <label>Idle replay ms
+            <input type="number" id="settingIdleReplay" min="1000" max="60000" />
+          </label>
+          <label>Engine depth (0 = no limit)
+            <input type="number" id="settingDepth" min="0" max="40" />
+          </label>
+          <label>Opening time ms
+            <input type="number" id="settingOpening" min="1000" max="60000" />
+          </label>
+          <label>Middlegame time ms
+            <input type="number" id="settingMiddle" min="1000" max="60000" />
+          </label>
+          <label>Endgame time ms
+            <input type="number" id="settingEndgame" min="1000" max="60000" />
+          </label>
+          <label>Engine repeat interval ms
+            <input type="number" id="settingRepeatInterval" min="1000" max="60000" />
+          </label>
+          <label>Engine repeat delay ms
+            <input type="number" id="settingRepeatDelay" min="0" max="60000" />
+          </label>
+          <label>Skill level
+            <input type="number" id="settingSkill" min="0" max="20" />
+          </label>
+          <label>Threads
+            <input type="number" id="settingThreads" min="1" max="8" />
+          </label>
+          <label>Hash (MB)
+            <input type="number" id="settingHash" min="1" max="512" />
+          </label>
+          <label><input type="checkbox" id="settingAutoHash" /> Auto hash (based on time)</label>
+          <label>UCI Elo
+            <input type="number" id="settingElo" min="800" max="3500" />
+          </label>
+          <label><input type="checkbox" id="settingBoost" /> Boost mode</label>
+          <label>Boost depth
+            <input type="number" id="settingBoostDepth" min="10" max="50" />
+          </label>
+          <label>Boost opening ms
+            <input type="number" id="settingBoostOpening" min="1000" max="120000" />
+          </label>
+          <label>Boost middlegame ms
+            <input type="number" id="settingBoostMiddle" min="1000" max="120000" />
+          </label>
+          <label>Boost endgame ms
+            <input type="number" id="settingBoostEndgame" min="1000" max="120000" />
+          </label>
+          <label>Boost threads
+            <input type="number" id="settingBoostThreads" min="1" max="8" />
+          </label>
+          <label>Boost hash (MB)
+            <input type="number" id="settingBoostHash" min="1" max="512" />
+          </label>
+          <label>Boost UCI Elo
+            <input type="number" id="settingBoostElo" min="800" max="3500" />
+          </label>
+        </div>
+        <div class="admin-actions">
+          <button id="adminSave">Apply & Save</button>
+          <button id="adminReset">Reset Defaults</button>
+        </div>
+        <div class="admin-json">
+          <textarea id="adminJson" placeholder="Settings JSON"></textarea>
+          <div class="admin-actions">
+            <button id="adminExport">Export JSON</button>
+            <button id="adminImport">Import JSON</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <section id="debugPanel" class="debug"></section>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
